@@ -1,0 +1,57 @@
+{
+  "name": "@conorbronsdon/gsc-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Google Search Console — SEO analytics and automation for AI agents: search performance, striking-distance keywords, sitemaps, and URL inspection.",
+  "type": "module",
+  "bin": {
+    "gsc-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "google-search-console",
+    "gsc",
+    "seo",
+    "search-analytics",
+    "sitemaps",
+    "ai",
+    "claude"
+  ],
+  "license": "MIT",
+  "author": "Conor Bronsdon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/conorbronsdon/gsc-mcp.git"
+  },
+  "homepage": "https://github.com/conorbronsdon/gsc-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/conorbronsdon/gsc-mcp/issues"
+  },
+  "mcpName": "io.github.conorbronsdon/gsc-mcp"
+}
