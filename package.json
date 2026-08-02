@@ -1,7 +1,7 @@
 {
   "name": "@conorbronsdon/gsc-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for Google Search Console — SEO analytics and automation for AI agents: search performance, striking-distance keywords, sitemaps, and URL inspection.",
+  "version": "1.1.0",
+  "description": "MCP server for Google Search Console \u2014 SEO analytics and automation for AI agents: search performance, striking-distance keywords, sitemaps, and URL inspection.",
   "type": "module",
   "bin": {
     "gsc-mcp": "dist/index.js"
@@ -31,7 +31,7 @@
     "vitest": "^4.1.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.19.0"
   },
   "keywords": [
     "mcp",
