@@ -105,7 +105,11 @@ describe("keyless start", () => {
     expect(Object.keys(tools)).toHaveLength(EXPECTED_TOOLS.length);
     const out = await callTool(server, "gsc_list_sites", {});
     expect(out.__error).toMatch(/credential not found/i);
-    expect(out.__error).toMatch(/seo-auth-setup\.py/);
+    expect(out.__error).toMatch(/credential not found/i);
+    // The remedy must be actionable for a stranger: no private repo, no script
+    // they cannot run. It points at the README and the scope they need.
+    expect(out.__error).toMatch(/README/);
+    expect(out.__error).not.toMatch(/cot-production|personal-context/);
   });
 });
 
