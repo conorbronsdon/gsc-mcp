@@ -6,7 +6,7 @@ Google Search Console for AI agents: search performance, striking-distance keywo
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![npm version](https://img.shields.io/npm/v/@conorbronsdon/gsc-mcp?style=flat-square)](https://www.npmjs.com/package/@conorbronsdon/gsc-mcp)
-[![Node](https://img.shields.io/badge/Node-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node](https://img.shields.io/badge/Node-20.19+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Glama score](https://glama.ai/mcp/servers/conorbronsdon/gsc-mcp/badges/score.svg)](https://glama.ai/mcp/servers/conorbronsdon/gsc-mcp)
 [![Podcast](https://img.shields.io/badge/Podcast-Chain_of_Thought-purple?style=flat-square)](https://chainofthought.show)
 [![X](https://img.shields.io/badge/X-@ConorBronsdon-black?style=flat-square&logo=x)](https://x.com/ConorBronsdon)
