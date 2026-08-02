@@ -109,7 +109,11 @@ describe("keyless start", () => {
     // The remedy must be actionable for a stranger: no private repo, no script
     // they cannot run. It points at the README and the scope they need.
     expect(out.__error).toMatch(/README/);
-    expect(out.__error).not.toMatch(/cot-production|personal-context/);
+    // Guarded generically on purpose: naming the private repos here would put
+    // them in a public file, which is the thing being guarded against. A remedy
+    // that sends someone to a script or a repo path is the failure mode.
+    expect(out.__error).not.toMatch(/\.py/);
+    expect(out.__error).not.toMatch(/repo(sitory)?/i);
   });
 });
 
