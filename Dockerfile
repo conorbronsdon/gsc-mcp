@@ -18,7 +18,7 @@ COPY --from=builder /app/dist ./dist
 
 # The server reads its OAuth credential from
 #   ~/.config/gws/searchconsole_credentials.json
-# (the file minted by cot-production's scripts/seo-auth-setup.py). Mount that
+# (an OAuth user credential for the webmasters scope). Mount that
 # directory into the container, or set GSC_CREDENTIALS_PATH to a mounted path.
 # The server starts and answers tools/list without it; tool calls then return a
 # clear setup error until the credential is present.

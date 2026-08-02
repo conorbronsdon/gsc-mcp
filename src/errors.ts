@@ -29,8 +29,8 @@ export class ScopeError extends GSCAPIError {
       403,
       "This tool needs the full https://www.googleapis.com/auth/webmasters scope, " +
         "but the saved credential only has webmasters.readonly. Re-run " +
-        "scripts/seo-auth-setup.py (in cot-production) to upgrade the credential, " +
-        "then click through consent again. Read-only tools keep working with the old file.",
+        "the OAuth consent flow requesting the full webmasters scope, then click " +
+        "through consent again. Read-only tools keep working with the old file.",
       endpoint,
     );
     this.name = "ScopeError";
@@ -80,9 +80,8 @@ export class CredentialMissingError extends Error {
   constructor(path: string) {
     super(
       `Google Search Console credential not found at ${path}. ` +
-        "Mint it once with: python scripts/seo-auth-setup.py (in the cot-production " +
-        "repo) — it opens a browser for one consent click. The same file is shared " +
-        "with the SEO snapshot script.",
+        "Mint one by running the OAuth flow for the webmasters scope — see the " +
+        "README. It opens a browser for a single consent click.",
     );
     this.name = "CredentialMissingError";
   }

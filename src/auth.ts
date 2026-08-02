@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { AuthError, CredentialMissingError } from "./errors.js";
 
 /**
- * The shared credential file written by cot-production's scripts/seo-auth-setup.py.
+ * An OAuth user credential for the Search Console API, in google-auth's saved-token
+ * format. See the README for how to mint one.
  * It is google-auth's `Credentials.to_json()` shape: an installed-app OAuth token
  * with a long-lived refresh_token. The Python SEO snapshot script reads the same
  * file, so one OAuth mint serves both the script and this MCP server.

@@ -20,8 +20,8 @@ async function main() {
         "Tools will error until it is minted.",
     );
     console.error(
-      "Mint it once with: python scripts/seo-auth-setup.py (in cot-production). " +
-        "It opens a browser for one consent click and is shared with the SEO snapshot script.",
+      "Mint one by running the OAuth flow for the webmasters scope — see the README. " +
+        "It opens a browser for a single consent click.",
     );
   } else if (!auth.hasWriteScope()) {
     console.error(

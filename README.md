@@ -46,13 +46,15 @@ This server uses an OAuth **installed-app** credential (a saved refresh token), 
 ~/.config/gws/searchconsole_credentials.json
 ```
 
-That is the exact file produced by the `seo-auth-setup.py` helper used elsewhere in this author's tooling, so **one OAuth mint serves both** the Python SEO scripts and this MCP server. The file is google-auth's `Credentials.to_json()` shape: it contains `client_id`, `client_secret`, `refresh_token`, and `scopes`. The server refreshes short-lived access tokens against Google's token endpoint directly with `fetch` — no heavy `googleapis` dependency.
+The file is google-auth's `Credentials.to_json()` shape: it contains `client_id`, `client_secret`, `refresh_token`, and `scopes`. The server refreshes short-lived access tokens against Google's token endpoint directly with `fetch` — no heavy `googleapis` dependency.
 
 To create the file yourself if you do not already have it:
 
 1. In Google Cloud Console, create an **OAuth client** of type *Desktop app* and download its `client_secret.json`.
 2. Enable the **Search Console API** on that project.
-3. Run an installed-app OAuth flow requesting the scope you need (see below) and save the resulting credentials to `~/.config/gws/searchconsole_credentials.json`. Any standard OAuth-installed-app snippet works; the bundled `seo-auth-setup.py` does exactly this in one command.
+3. Run an installed-app OAuth flow requesting the scope you need (see below) and save the resulting credentials to `~/.config/gws/searchconsole_credentials.json`. Any standard `google-auth-oauthlib` installed-app snippet works — about ten lines, and it opens a browser for a single consent click.
+
+The path is shared on purpose: if you already hold a Search Console credential in that location for other tooling, this server reuses it rather than asking you to mint a second one.
 
 ### Scopes: read-only vs. full
 
