@@ -1,6 +1,6 @@
 {
   "name": "@conorbronsdon/gsc-mcp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "MCP server for Google Search Console — SEO analytics and automation for AI agents: search performance, striking-distance keywords, sitemaps, and URL inspection.",
   "type": "module",
   "bin": {
