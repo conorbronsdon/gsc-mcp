@@ -152,6 +152,18 @@ Tests mock `fetch` and make no network calls.
 
 Issues and pull requests are welcome. If a Search Console endpoint is worth wrapping as a tool, open an issue describing what it should return and the endpoint it maps to. Keep the contract honest: read tools stay read-only, write tools carry the right annotations, and responses stay compact.
 
+## The rest of the suite
+
+Search Console is one credential family in a wider Google data stack. The siblings, each with its own auth:
+
+| Data | Server |
+|---|---|
+| Google Workspace (Gmail, Calendar, Drive, Sheets, Docs, Tasks) | [gws-mcp-server](https://github.com/conorbronsdon/gws-mcp-server) — same curated approach: narrow surface, side effects declared on every tool |
+| Google Analytics 4 | [googleanalytics/google-analytics-mcp](https://github.com/googleanalytics/google-analytics-mcp) — Google's own, read-only |
+| BigQuery | [googleapis/mcp-toolbox](https://github.com/googleapis/mcp-toolbox) — Google's own |
+
+Nothing here shares a token: this server uses a `webmasters` OAuth credential, Workspace uses `gws auth login`, GA4 uses Application Default Credentials scoped `analytics.readonly`.
+
 ## About
 
 Built and maintained by [Conor Bronsdon](https://github.com/conorbronsdon). I host the [Chain of Thought](https://chainofthought.show) podcast, which covers AI infrastructure, developer tools, and how practitioners actually use this stuff. I built this to pull SEO work into the agent workflows that run the show and my site.
