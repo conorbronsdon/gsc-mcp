@@ -159,10 +159,11 @@ Search Console is one credential family in a wider Google data stack. The siblin
 | Data | Server |
 |---|---|
 | Google Workspace (Gmail, Calendar, Drive, Sheets, Docs, Tasks) | [gws-mcp-server](https://github.com/conorbronsdon/gws-mcp-server) — same curated approach: narrow surface, side effects declared on every tool |
+| YouTube Analytics | [yt-analytics-mcp](https://github.com/conorbronsdon/yt-analytics-mcp) — owner-side watch time, retention, traffic sources, and playlist metrics; read-only |
 | Google Analytics 4 | [googleanalytics/google-analytics-mcp](https://github.com/googleanalytics/google-analytics-mcp) — Google's own, read-only |
 | BigQuery | [googleapis/mcp-toolbox](https://github.com/googleapis/mcp-toolbox) — Google's own |
 
-Nothing here shares a token: this server uses a `webmasters` OAuth credential, Workspace uses `gws auth login`, GA4 uses Application Default Credentials scoped `analytics.readonly`.
+Nothing here shares a token: this server uses a `webmasters` OAuth credential, Workspace uses `gws auth login`, YouTube Analytics uses a `yt-analytics.readonly` OAuth credential, GA4 uses Application Default Credentials scoped `analytics.readonly`.
 
 ## About
 
