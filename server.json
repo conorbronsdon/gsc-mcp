@@ -7,12 +7,12 @@
     "url": "https://github.com/conorbronsdon/gsc-mcp",
     "source": "github"
   },
-  "version": "0.1.0",
+  "version": "1.1.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@conorbronsdon/gsc-mcp",
-      "version": "0.1.0",
+      "version": "1.1.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
