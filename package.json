@@ -1,7 +1,7 @@
 {
   "name": "@conorbronsdon/gsc-mcp",
   "version": "1.1.0",
-  "description": "MCP server for Google Search Console \u2014 SEO analytics and automation for AI agents: search performance, striking-distance keywords, sitemaps, and URL inspection.",
+  "description": "MCP server for Google Search Console — SEO analytics and automation for AI agents: search performance, striking-distance keywords, sitemaps, and URL inspection.",
   "type": "module",
   "bin": {
     "gsc-mcp": "dist/index.js"
@@ -18,6 +18,7 @@
     "sync:release": "node scripts/sync-release-metadata.mjs",
     "lint": "tsc --noEmit",
     "test": "vitest run",
+    "test:release": "node --test scripts/check-release-order.controls.mjs",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "prepublishOnly": "npm run check:release && npm run build && npm test",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "semver": "^7.8.5",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.0"
