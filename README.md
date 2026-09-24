@@ -2,6 +2,8 @@
 
 # gsc-mcp
 
+> **Maintenance mode.** This project is stable and receives security fixes. New features aren't planned, but issues and pull requests are still welcome.
+
 Google Search Console for AI agents: search performance, striking-distance keywords, sitemaps, and URL inspection. SEO automation you can hand to an assistant.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
