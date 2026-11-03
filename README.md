@@ -150,6 +150,21 @@ npm start
 
 Tests mock `fetch` and make no network calls.
 
+## Use as a library
+
+The package also exports its tools for embedding, so another MCP server can mount the Search Console tools next to its own instead of running a second process. Importing the package starts nothing and reads no credential.
+
+```ts
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { DEFAULT_CREDENTIAL_PATH, GSCClient, GoogleAuth, registerGscTools } from "@conorbronsdon/gsc-mcp";
+
+const server = new McpServer({ name: "my-server", version: "1.0.0" });
+const auth = GoogleAuth.tryLoad(DEFAULT_CREDENTIAL_PATH);
+registerGscTools(server, auth ? new GSCClient(auth) : null);
+```
+
+The mounted tools have the same names, schemas, annotations and results as the standalone server. With a `null` client they still appear in `tools/list` and return a setup error when called; pass `{ credentialPath }` as the third argument to name a non-default path in that error.
+
 ## Contributing
 
 Issues and pull requests are welcome. If a Search Console endpoint is worth wrapping as a tool, open an issue describing what it should return and the endpoint it maps to. Keep the contract honest: read tools stay read-only, write tools carry the right annotations, and responses stay compact.

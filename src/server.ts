@@ -40,18 +40,47 @@ function buildAnnotations(
 const STRIKING_POS_MIN = 8.0;
 const STRIKING_POS_MAX = 25.0;
 
+/** Options for {@link registerGscTools}. */
+export interface RegisterGscToolsOptions {
+  /**
+   * Credential path named in the setup error a tool returns when no client is
+   * configured. Defaults to the standalone server's default path.
+   */
+  credentialPath?: string;
+}
+
+/**
+ * Standalone gsc-mcp server: a fresh McpServer with every Search Console tool
+ * registered. This is what the `gsc-mcp` binary runs.
+ */
 export function createServer(client: GSCClient | null): McpServer {
   const server = new McpServer({
     name: "gsc-mcp",
     version: "0.1.0",
   });
+  registerGscTools(server, client);
+  return server;
+}
+
+/**
+ * Register the Search Console tools on an existing McpServer, so another server
+ * (for example a combined discoverability server) can mount them next to its
+ * own tools. Tool names, schemas, annotations and results are identical to the
+ * standalone server's. Pass `null` for `client` to register the tools without a
+ * credential: they still appear in tools/list and return a setup error on call.
+ */
+export function registerGscTools(
+  server: McpServer,
+  client: GSCClient | null,
+  options: RegisterGscToolsOptions = {},
+): void {
+  const credentialPath =
+    options.credentialPath ?? "~/.config/gws/searchconsole_credentials.json";
 
   /** Resolve the client or return a per-tool setup error if none is configured. */
   function need(): GSCClient {
     if (!client) {
-      throw new CredentialMissingError(
-        "~/.config/gws/searchconsole_credentials.json",
-      );
+      throw new CredentialMissingError(credentialPath);
     }
     return client;
   }
@@ -451,8 +480,6 @@ export function createServer(client: GSCClient | null): McpServer {
       });
     }),
   );
-
-  return server;
 }
 
 export { errorResult };
