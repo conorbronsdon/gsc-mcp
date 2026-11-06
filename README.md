@@ -61,8 +61,8 @@ The path is shared on purpose: if you already hold a Search Console credential i
 
 ### Scopes: read-only vs. full
 
-- **Read tools** work with `https://www.googleapis.com/auth/webmasters.readonly`.
-- **Write tools** (`gsc_submit_sitemap`, `gsc_delete_sitemap`) and **URL inspection** need the full `https://www.googleapis.com/auth/webmasters` scope.
+- **Read tools**, including `gsc_inspect_url`, work with `https://www.googleapis.com/auth/webmasters.readonly`.
+- **Write tools** (`gsc_submit_sitemap`, `gsc_delete_sitemap`) need the full `https://www.googleapis.com/auth/webmasters` scope.
 
 If your saved credential only has the read-only scope, the read tools work and the write tools return a clear "re-mint with the full scope" error rather than a cryptic 403. Re-running the mint with the full scope upgrades the same file in place; read tools keep working throughout.
 
@@ -80,7 +80,7 @@ Add your site at [search.google.com/search-console](https://search.google.com/se
 
 ### 2. Mint the credential
 
-Create `~/.config/gws/searchconsole_credentials.json` as described under **Authentication**, requesting the full `webmasters` scope if you want the write and URL-inspection tools.
+Create `~/.config/gws/searchconsole_credentials.json` as described under **Authentication**, requesting the full `webmasters` scope if you want the two sitemap write tools.
 
 ### 3. Configure your MCP client
 
