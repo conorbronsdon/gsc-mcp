@@ -1,4 +1,5 @@
 import type { GoogleAuth } from "./auth.js";
+import { VERSION } from "./version.js";
 import {
   AuthError,
   GSCAPIError,
@@ -18,7 +19,6 @@ import type {
 
 const WEBMASTERS_BASE = "https://www.googleapis.com/webmasters/v3";
 const INSPECTION_BASE = "https://searchconsole.googleapis.com/v1";
-const VERSION = "0.1.0";
 
 /**
  * Client for the Google Search Console API. Read methods hit the documented
