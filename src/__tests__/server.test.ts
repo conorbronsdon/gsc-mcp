@@ -394,17 +394,22 @@ describe("numeric inputs reject non-integers before reaching Google", () => {
       start_date: "2026-05-01",
       end_date: "2026-05-28",
     };
-    for (const extra of [
-      { limit: 0 },
-      { limit: 1.5 },
-      { min_impressions: -1 },
-      { min_impressions: 2.5 },
-    ]) {
+    // Each case names the constraint that must fire: a bound (.min) or .int().
+    const cases: Array<[Record<string, number>, string]> = [
+      [{ limit: 0 }, "Too small: expected number to be >=1 at limit"],
+      [{ limit: 1.5 }, "Invalid input: expected int, received number at limit"],
+      [{ min_impressions: -1 }, "Too small: expected number to be >=0 at min_impressions"],
+      [{ min_impressions: 2.5 }, "Invalid input: expected int, received number at min_impressions"],
+    ];
+    for (const [extra, message] of cases) {
       const res = await client.callTool({
         name: "gsc_striking_distance",
         arguments: { ...base, ...extra },
       });
       expect(res.isError, JSON.stringify(extra)).toBe(true);
+      expect((res.content as any)[0].text, JSON.stringify(extra)).toBe(
+        `MCP error -32602: Input validation error: Invalid arguments for tool gsc_striking_distance: ${message}`,
+      );
     }
     expect(fetchMock).toHaveBeenCalledTimes(0);
   });
@@ -463,6 +468,35 @@ describe("dates must be YYYY-MM-DD", () => {
       }
     }
     expect(fetchMock).toHaveBeenCalledTimes(0);
+  });
+
+  it("rejects shape-valid but impossible dates (2026-02-31, 2026-13-01) without calling Google", async () => {
+    const { server, fetchMock } = serverWithFetchSpy();
+    const client = await connect(server);
+    for (const bad of ["2026-02-31", "2026-13-01", "2026-04-31", "2026-00-10"]) {
+      for (const name of ["gsc_search_analytics", "gsc_striking_distance"]) {
+        const res = await client.callTool({
+          name,
+          arguments: { site_url: "sc-domain:example.com", start_date: "2026-05-01", end_date: bad },
+        });
+        expect(res.isError, `${name} ${bad}`).toBe(true);
+        expect((res.content as any)[0].text, `${name} ${bad}`).toContain(
+          "Expected a real calendar date, e.g. 2026-05-01. at end_date",
+        );
+      }
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+  });
+
+  it("accepts real calendar edge dates (2028-02-29, 2026-12-31)", async () => {
+    const { server, fetchMock } = serverWithFetchSpy();
+    const client = await connect(server);
+    const res = await client.callTool({
+      name: "gsc_search_analytics",
+      arguments: { site_url: "sc-domain:example.com", start_date: "2026-12-31", end_date: "2028-02-29" },
+    });
+    expect(res.isError).not.toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("accepts YYYY-MM-DD and sends it unchanged", async () => {

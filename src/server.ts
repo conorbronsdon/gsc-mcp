@@ -40,6 +40,12 @@ function buildAnnotations(
 
 const STRIKING_POS_MIN = 8.0;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** True when a YYYY-MM-DD string names a day that exists (no 2026-02-31). */
+function isCalendarDate(value: string): boolean {
+  const d = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
 const STRIKING_POS_MAX = 25.0;
 
 /** Options for {@link registerGscTools}. */
@@ -111,6 +117,7 @@ export function registerGscTools(
     z
       .string()
       .regex(DATE_RE, "Expected a date in YYYY-MM-DD form, e.g. 2026-05-01.")
+      .refine(isCalendarDate, "Expected a real calendar date, e.g. 2026-05-01.")
       .describe(description);
 
   const siteUrlArg = z
