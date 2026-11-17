@@ -150,7 +150,7 @@ export class GoogleAuth {
       });
     } catch (err) {
       throw new AuthError(
-        TOKEN_ENDPOINT,
+        endpoint,
         `Network error refreshing the access token: ${
           err instanceof Error ? err.message : String(err)
         }`,
@@ -160,7 +160,7 @@ export class GoogleAuth {
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       throw new AuthError(
-        TOKEN_ENDPOINT,
+        endpoint,
         `Token refresh failed (HTTP ${response.status}). The refresh token may be ` +
           `revoked or expired — re-mint it as described in the README's Authentication ` +
           `section. ${text.slice(0, 200)}`,
@@ -172,7 +172,7 @@ export class GoogleAuth {
       expires_in?: number;
     };
     if (!data.access_token) {
-      throw new AuthError(TOKEN_ENDPOINT, "Token endpoint returned no access_token.");
+      throw new AuthError(endpoint, "Token endpoint returned no access_token.");
     }
     this.accessToken = data.access_token;
     this.expiresAt = Date.now() + (data.expires_in ?? 3600) * 1000;

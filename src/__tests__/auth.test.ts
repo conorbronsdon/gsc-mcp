@@ -14,6 +14,7 @@ function writeCred(contents: unknown): string {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("GoogleAuth.tryLoad", () => {
@@ -208,6 +209,15 @@ describe("token_uri allow-list", () => {
       rmSync(path, { force: true });
     }
     expect(fetchMock).toHaveBeenCalledTimes(0);
+  });
+
+  it("names the endpoint it actually used when a legacy endpoint refuses the refresh", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("bad", { status: 400 })));
+    const path = writeCred({ ...CRED, token_uri: "https://accounts.google.com/o/oauth2/token" });
+    const err = await GoogleAuth.tryLoad(path)!.getAccessToken().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(AuthError);
+    expect((err as AuthError).endpoint).toBe("https://accounts.google.com/o/oauth2/token");
+    rmSync(path, { force: true });
   });
 
   it("must-not-fire: Google endpoints and a missing token_uri still refresh", async () => {
