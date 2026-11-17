@@ -119,12 +119,17 @@ describe("keyless start", () => {
     // Guarded generically on purpose: naming the private repos here would put
     // them in a public file, which is the thing being guarded against. A remedy
     // that sends someone to a script or a repo path is the failure mode.
-    expect(out.__error).not.toMatch(/\.py\b/);
-    expect(out.__error).not.toMatch(/\brepo(sitory)?\b/i);
+    // The negative control below reuses these exact guard objects, so a guard
+    // edited into a form that cannot match (e.g. a literal backspace for \b)
+    // turns the control red instead of passing vacuously.
+    const scriptGuard = /\.py\b/;
+    const repoGuard = /\brepo(sitory)?\b/i;
+    expect(out.__error).not.toMatch(scriptGuard);
+    expect(out.__error).not.toMatch(repoGuard);
     // Negative control: the guards must be able to go red on the failure mode.
     const badRemedy = "Re-mint it with scripts/setup.py from the private repo.";
-    expect(badRemedy).toMatch(/\.py\b/);
-    expect(badRemedy).toMatch(/\brepo(sitory)?\b/i);
+    expect(badRemedy).toMatch(scriptGuard);
+    expect(badRemedy).toMatch(repoGuard);
   });
 });
 
