@@ -250,7 +250,10 @@ export function registerGscTools(
         site_url: siteUrlArg,
         start_date: z
           .string()
-          .describe("Start date, YYYY-MM-DD (default: 28 days before end_date if omitted in your call)."),
+          .describe(
+            "Start date, YYYY-MM-DD (Pacific Time, inclusive). Required; a 28-day " +
+              "window (start_date 27 days before end_date) is a good default.",
+          ),
         end_date: z.string().describe("End date, YYYY-MM-DD (lag ~2-3 days behind today)."),
         min_impressions: z
           .number()

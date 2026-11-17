@@ -182,6 +182,16 @@ describe("gsc_striking_distance tool", () => {
   });
 });
 
+describe("gsc_striking_distance schema", () => {
+  it("start_date is required and its description does not promise a default", () => {
+    const server = serverReturning({});
+    const tool = (server as any)._registeredTools["gsc_striking_distance"];
+    const shape = tool.inputSchema.shape;
+    expect(shape.start_date.isOptional()).toBe(false);
+    expect(shape.start_date.description).not.toMatch(/if omitted/i);
+  });
+});
+
 describe("gsc_list_sitemaps tool", () => {
   it("projects the key sitemap status fields", async () => {
     const server = serverReturning({
