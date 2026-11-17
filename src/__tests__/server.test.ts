@@ -284,6 +284,41 @@ describe("gsc_inspect_url tool", () => {
   });
 });
 
+describe("keyless start with a credential file that exists but is unusable", () => {
+  const PATH = "/example/gsc-cred.json";
+  const REMEDY =
+    "Mint one by running the OAuth flow for the webmasters scope — see the " +
+    "README. It opens a browser for a single consent click.";
+
+  it("says the file is incomplete instead of claiming it was not found", async () => {
+    const server = createServer(null, { credentialPath: PATH, credentialProblem: "incomplete" });
+    const out = await callTool(server, "gsc_list_sites", {});
+    expect(out.__error).toBe(
+      "Google Search Console credential at /example/gsc-cred.json is missing " +
+        "refresh_token, client_id or client_secret. If this is the OAuth client file " +
+        "you downloaded (client_secret.json), it is the input to the OAuth flow, not " +
+        `the minted credential. ${REMEDY}`,
+    );
+    expect(out.__error).not.toMatch(/not found/i);
+  });
+
+  it("says the file is not valid JSON", async () => {
+    const server = createServer(null, { credentialPath: PATH, credentialProblem: "invalid-json" });
+    const out = await callTool(server, "gsc_list_sites", {});
+    expect(out.__error).toBe(
+      `Google Search Console credential at /example/gsc-cred.json is not valid JSON. ${REMEDY}`,
+    );
+  });
+
+  it("keeps the 'not found' message for a missing file, with or without the option", async () => {
+    const expected = `Google Search Console credential not found at /example/gsc-cred.json. ${REMEDY}`;
+    for (const opts of [{ credentialPath: PATH }, { credentialPath: PATH, credentialProblem: "missing" as const }]) {
+      const out = await callTool(createServer(null, opts), "gsc_list_sites", {});
+      expect(out.__error).toBe(expected);
+    }
+  });
+});
+
 // --- input hardening (issue #46) ---
 
 /** Connect a real MCP client to the server over an in-memory transport. */

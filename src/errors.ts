@@ -83,14 +83,33 @@ export class NotFoundError extends GSCAPIError {
   }
 }
 
-/** Thrown when the credential file is absent or unreadable. Surfaced per-tool. */
+/**
+ * Why a credential file could not be loaded: absent, unreadable, not JSON, or
+ * JSON without the refresh_token / client_id / client_secret fields.
+ */
+export type CredentialProblem = "missing" | "unreadable" | "invalid-json" | "incomplete";
+
+const MINT_REMEDY =
+  "Mint one by running the OAuth flow for the webmasters scope — see the " +
+  "README. It opens a browser for a single consent click.";
+
+/**
+ * Thrown when the credential file is absent or unusable. Surfaced per-tool.
+ * Without a `problem` it reports a missing file (the original message).
+ */
 export class CredentialMissingError extends Error {
-  constructor(path: string) {
-    super(
-      `Google Search Console credential not found at ${path}. ` +
-        "Mint one by running the OAuth flow for the webmasters scope — see the " +
-        "README. It opens a browser for a single consent click.",
-    );
+  constructor(path: string, problem: CredentialProblem = "missing") {
+    const what: Record<CredentialProblem, string> = {
+      missing: `Google Search Console credential not found at ${path}.`,
+      unreadable: `Google Search Console credential at ${path} could not be read as a file. Check that the path names a file (not a directory) and that this process has permission to read it, or replace it.`,
+      "invalid-json": `Google Search Console credential at ${path} is not valid JSON.`,
+      incomplete:
+        `Google Search Console credential at ${path} is missing refresh_token, ` +
+        "client_id or client_secret. If this is the OAuth client file you " +
+        "downloaded (client_secret.json), it is the input to the OAuth flow, not " +
+        "the minted credential.",
+    };
+    super(`${what[problem]} ${MINT_REMEDY}`);
     this.name = "CredentialMissingError";
   }
 }

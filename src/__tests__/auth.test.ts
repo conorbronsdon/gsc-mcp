@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { GoogleAuth } from "../auth.js";
-import { AuthError } from "../errors.js";
+import { AuthError, CredentialMissingError } from "../errors.js";
 
 function writeCred(contents: unknown): string {
   const dir = mkdtempSync(join(tmpdir(), "gsc-"));
@@ -40,6 +40,84 @@ describe("GoogleAuth.tryLoad", () => {
     expect(auth!.scopes).toContain(
       "https://www.googleapis.com/auth/webmasters.readonly",
     );
+    rmSync(path, { force: true });
+  });
+});
+
+describe("GoogleAuth.check", () => {
+  it("is 'missing' when there is no file", () => {
+    expect(GoogleAuth.check("/no/such/example-cred.json")).toBe("missing");
+  });
+
+  it("is 'invalid-json' for a file that is not JSON", () => {
+    const path = writeCred("{ not json");
+    expect(GoogleAuth.check(path)).toBe("invalid-json");
+    rmSync(path, { force: true });
+  });
+
+  it("is 'incomplete' for the OAuth client file saved in place of the credential", () => {
+    const path = writeCred({
+      installed: {
+        client_id: "example-client-id",
+        client_secret: "example-client-secret",
+      },
+    });
+    expect(GoogleAuth.check(path)).toBe("incomplete");
+    expect(GoogleAuth.tryLoad(path)).toBeNull();
+    rmSync(path, { force: true });
+  });
+
+  it("is 'incomplete' for JSON null", () => {
+    const path = writeCred("null");
+    expect(GoogleAuth.check(path)).toBe("incomplete");
+    expect(GoogleAuth.tryLoad(path)).toBeNull();
+    rmSync(path, { force: true });
+  });
+
+  it("is 'unreadable' when the path exists but cannot be read as a file", () => {
+    // A directory at the credential path: existsSync is true, readFileSync throws.
+    const dir = mkdtempSync(join(tmpdir(), "gsc-"));
+    expect(GoogleAuth.check(dir)).toBe("unreadable");
+    expect(GoogleAuth.tryLoad(dir)).toBeNull();
+    expect(new CredentialMissingError(dir, "unreadable").message).toBe(
+      `Google Search Console credential at ${dir} could not be read as a file. Check that the path names a file (not a directory) and that this process has permission to read it, or replace it. ` +
+        "Mint one by running the OAuth flow for the webmasters scope — see the README. It opens a browser for a single consent click.",
+    );
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("is 'missing' when a parent in the path is a file (ENOTDIR), not 'unreadable'", () => {
+    const file = writeCred({ client_id: "example-client-id" });
+    // `<file>/cred.json`: the parent is a regular file, so readFileSync throws ENOTDIR.
+    expect(GoogleAuth.check(join(file, "cred.json"))).toBe("missing");
+    rmSync(file, { force: true });
+  });
+
+  it("load() returns the auth or the problem from one read", () => {
+    const good = writeCred({
+      client_id: "example-client-id",
+      client_secret: "example-client-secret",
+      refresh_token: "example-refresh-token",
+    });
+    const loaded = GoogleAuth.load(good);
+    expect("auth" in loaded && loaded.auth instanceof GoogleAuth).toBe(true);
+    expect("problem" in loaded).toBe(false);
+    rmSync(good, { force: true });
+
+    const client = writeCred({ installed: { client_id: "example-client-id" } });
+    expect(GoogleAuth.load(client)).toEqual({ problem: "incomplete" });
+    rmSync(client, { force: true });
+    expect(GoogleAuth.load("/no/such/example-cred.json")).toEqual({ problem: "missing" });
+  });
+
+  it("is null for a usable credential", () => {
+    const path = writeCred({
+      client_id: "example-client-id",
+      client_secret: "example-client-secret",
+      refresh_token: "example-refresh-token",
+    });
+    expect(GoogleAuth.check(path)).toBeNull();
+    expect(GoogleAuth.tryLoad(path)).not.toBeNull();
     rmSync(path, { force: true });
   });
 });
