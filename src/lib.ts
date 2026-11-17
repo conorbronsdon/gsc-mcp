@@ -18,6 +18,7 @@ export { DEFAULT_CREDENTIAL_PATH, GoogleAuth } from "./auth.js";
 export {
   AuthError,
   CredentialMissingError,
+  type CredentialProblem,
   GSCAPIError,
   NotFoundError,
   PermissionError,

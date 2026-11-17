@@ -43,6 +43,48 @@ describe("GoogleAuth.tryLoad", () => {
   });
 });
 
+describe("GoogleAuth.check", () => {
+  it("is 'missing' when there is no file", () => {
+    expect(GoogleAuth.check("/no/such/example-cred.json")).toBe("missing");
+  });
+
+  it("is 'invalid-json' for a file that is not JSON", () => {
+    const path = writeCred("{ not json");
+    expect(GoogleAuth.check(path)).toBe("invalid-json");
+    rmSync(path, { force: true });
+  });
+
+  it("is 'incomplete' for the OAuth client file saved in place of the credential", () => {
+    const path = writeCred({
+      installed: {
+        client_id: "example-client-id",
+        client_secret: "example-client-secret",
+      },
+    });
+    expect(GoogleAuth.check(path)).toBe("incomplete");
+    expect(GoogleAuth.tryLoad(path)).toBeNull();
+    rmSync(path, { force: true });
+  });
+
+  it("is 'incomplete' for JSON null", () => {
+    const path = writeCred("null");
+    expect(GoogleAuth.check(path)).toBe("incomplete");
+    expect(GoogleAuth.tryLoad(path)).toBeNull();
+    rmSync(path, { force: true });
+  });
+
+  it("is null for a usable credential", () => {
+    const path = writeCred({
+      client_id: "example-client-id",
+      client_secret: "example-client-secret",
+      refresh_token: "example-refresh-token",
+    });
+    expect(GoogleAuth.check(path)).toBeNull();
+    expect(GoogleAuth.tryLoad(path)).not.toBeNull();
+    rmSync(path, { force: true });
+  });
+});
+
 describe("GoogleAuth.hasWriteScope", () => {
   it("is false for a readonly-only credential", () => {
     const path = writeCred({

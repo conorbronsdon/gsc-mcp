@@ -3,12 +3,14 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { DEFAULT_CREDENTIAL_PATH, GoogleAuth } from "./auth.js";
 import { GSCClient } from "./client.js";
+import { CredentialMissingError } from "./errors.js";
 import { createServer } from "./server.js";
 
 async function main() {
   // GSC_CREDENTIALS_PATH lets you point at a non-default credential file.
   const credPath = process.env.GSC_CREDENTIALS_PATH || DEFAULT_CREDENTIAL_PATH;
   const auth = GoogleAuth.tryLoad(credPath);
+  const credentialProblem = auth ? undefined : (GoogleAuth.check(credPath) ?? undefined);
 
   // Start keyless: the server must boot and answer tools/list even with no
   // credential, so MCP inspectors (e.g. Glama) can introspect it. Tool *calls*
@@ -16,12 +18,8 @@ async function main() {
   // is the MCP transport and must stay clean JSON-RPC.
   if (!auth) {
     console.error(
-      `Warning: no Google Search Console credential at ${credPath}. ` +
-        "Tools will error until it is minted.",
-    );
-    console.error(
-      "Mint one by running the OAuth flow for the webmasters scope — see the README. " +
-        "It opens a browser for a single consent click.",
+      `Warning: ${new CredentialMissingError(credPath, credentialProblem).message} ` +
+        "Tools will error until it is fixed.",
     );
   } else if (!auth.hasWriteScope()) {
     console.error(
@@ -34,7 +32,7 @@ async function main() {
   const client = auth ? new GSCClient(auth) : null;
   // Pass the resolved path so the per-tool setup error names the file this
   // process actually looked for (GSC_CREDENTIALS_PATH or the default).
-  const server = createServer(client, { credentialPath: credPath });
+  const server = createServer(client, { credentialPath: credPath, credentialProblem });
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Google Search Console MCP server running on stdio");

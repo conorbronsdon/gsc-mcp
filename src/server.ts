@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import type { GSCClient } from "./client.js";
-import { CredentialMissingError } from "./errors.js";
+import { CredentialMissingError, type CredentialProblem } from "./errors.js";
 import { round, shapeRow, stripNulls } from "./shape.js";
 import type { UrlInspectionResult } from "./types.js";
 import { VERSION } from "./version.js";
@@ -48,6 +48,12 @@ export interface RegisterGscToolsOptions {
    * configured. Defaults to the standalone server's default path.
    */
   credentialPath?: string;
+  /**
+   * Why no client could be built from `credentialPath`, from
+   * `GoogleAuth.check()`. Defaults to "missing". Lets the setup error say a
+   * file exists but is unusable instead of claiming it was not found.
+   */
+  credentialProblem?: CredentialProblem;
 }
 
 /**
@@ -85,7 +91,7 @@ export function registerGscTools(
   /** Resolve the client or return a per-tool setup error if none is configured. */
   function need(): GSCClient {
     if (!client) {
-      throw new CredentialMissingError(credentialPath);
+      throw new CredentialMissingError(credentialPath, options.credentialProblem);
     }
     return client;
   }

@@ -163,7 +163,7 @@ const auth = GoogleAuth.tryLoad(DEFAULT_CREDENTIAL_PATH);
 registerGscTools(server, auth ? new GSCClient(auth) : null);
 ```
 
-The mounted tools have the same names, schemas, annotations and results as the standalone server. With a `null` client they still appear in `tools/list` and return a setup error when called; pass `{ credentialPath }` as the third argument to name a non-default path in that error.
+The mounted tools have the same names, schemas, annotations and results as the standalone server. With a `null` client they still appear in `tools/list` and return a setup error when called; pass `{ credentialPath }` as the third argument to name a non-default path in that error, and `credentialProblem: GoogleAuth.check(path)` to say why a file that exists could not be used (not JSON, or missing the refresh token).
 
 ## Contributing
 

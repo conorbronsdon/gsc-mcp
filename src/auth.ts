@@ -1,7 +1,11 @@
 import { readFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { AuthError, CredentialMissingError } from "./errors.js";
+import {
+  AuthError,
+  CredentialMissingError,
+  type CredentialProblem,
+} from "./errors.js";
 
 /**
  * An OAuth user credential for the Search Console API, in google-auth's saved-token
@@ -46,26 +50,50 @@ export class GoogleAuth {
 
   /**
    * Load the credential from disk. Returns null (does not throw) when the file
-   * is absent, so the server can start keyless and report the gap per-tool.
+   * is absent or unusable, so the server can start keyless and report the gap
+   * per-tool. {@link GoogleAuth.check} says which of those it was.
    */
   static tryLoad(path: string = DEFAULT_CREDENTIAL_PATH): GoogleAuth | null {
-    if (!existsSync(path)) return null;
+    const result = GoogleAuth.read(path);
+    return "cred" in result ? new GoogleAuth(result.cred) : null;
+  }
+
+  /**
+   * Why the credential at `path` cannot be loaded, or null when it can. Lets a
+   * caller tell "no file" apart from "a file that is not a usable credential"
+   * (malformed JSON, or the OAuth client file saved in place of the token).
+   */
+  static check(path: string = DEFAULT_CREDENTIAL_PATH): CredentialProblem | null {
+    const result = GoogleAuth.read(path);
+    return "problem" in result ? result.problem : null;
+  }
+
+  private static read(
+    path: string,
+  ): { cred: StoredCredential } | { problem: CredentialProblem } {
+    if (!existsSync(path)) return { problem: "missing" };
     let raw: string;
     try {
       raw = readFileSync(path, "utf-8");
     } catch {
-      return null;
+      return { problem: "unreadable" };
     }
     let parsed: StoredCredential;
     try {
       parsed = JSON.parse(raw) as StoredCredential;
     } catch {
-      return null;
+      return { problem: "invalid-json" };
     }
-    if (!parsed.refresh_token || !parsed.client_id || !parsed.client_secret) {
-      return null;
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !parsed.refresh_token ||
+      !parsed.client_id ||
+      !parsed.client_secret
+    ) {
+      return { problem: "incomplete" };
     }
-    return new GoogleAuth(parsed);
+    return { cred: parsed };
   }
 
   /** Scopes recorded in the credential file (best-effort; may be absent). */
