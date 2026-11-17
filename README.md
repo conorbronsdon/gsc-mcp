@@ -159,11 +159,14 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { DEFAULT_CREDENTIAL_PATH, GSCClient, GoogleAuth, registerGscTools } from "@conorbronsdon/gsc-mcp";
 
 const server = new McpServer({ name: "my-server", version: "1.0.0" });
-const auth = GoogleAuth.tryLoad(DEFAULT_CREDENTIAL_PATH);
-registerGscTools(server, auth ? new GSCClient(auth) : null);
+const loaded = GoogleAuth.load(DEFAULT_CREDENTIAL_PATH); // one read: { auth } or { problem }
+registerGscTools(server, "auth" in loaded ? new GSCClient(loaded.auth) : null, {
+  credentialPath: DEFAULT_CREDENTIAL_PATH,
+  credentialProblem: "problem" in loaded ? loaded.problem : undefined,
+});
 ```
 
-The mounted tools have the same names, schemas, annotations and results as the standalone server. With a `null` client they still appear in `tools/list` and return a setup error when called; pass `{ credentialPath }` as the third argument to name a non-default path in that error, and `credentialProblem: GoogleAuth.check(path)` to say why a file that exists could not be used (not JSON, or missing the refresh token).
+The mounted tools have the same names, schemas, annotations and results as the standalone server. With a `null` client they still appear in `tools/list` and return a setup error when called; pass `{ credentialPath }` as the third argument to name a non-default path in that error, and `credentialProblem` (from the same `GoogleAuth.load()` result, as above) to say why a file that exists could not be used (not JSON, or missing the refresh token). `GoogleAuth.tryLoad()` still works when you only need the client.
 
 ## Contributing
 

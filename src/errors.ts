@@ -101,7 +101,7 @@ export class CredentialMissingError extends Error {
   constructor(path: string, problem: CredentialProblem = "missing") {
     const what: Record<CredentialProblem, string> = {
       missing: `Google Search Console credential not found at ${path}.`,
-      unreadable: `Google Search Console credential at ${path} could not be read. Check the file's permissions, or replace it.`,
+      unreadable: `Google Search Console credential at ${path} could not be read as a file. Check that the path names a readable file (not a directory, and every parent folder exists), or replace it.`,
       "invalid-json": `Google Search Console credential at ${path} is not valid JSON.`,
       incomplete:
         `Google Search Console credential at ${path} is missing refresh_token, ` +

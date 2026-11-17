@@ -60,8 +60,10 @@ export class GoogleAuth {
 
   /**
    * Read the credential once and return either the loaded auth or why it could
-   * not be loaded. The standalone server uses this so its startup warning and
-   * per-tool error come from a single observation of the file.
+   * not be loaded. The standalone server calls this once at startup, so its
+   * warning and per-tool error agree; a file fixed later takes effect on
+   * restart. Library callers should use this rather than tryLoad() + check(),
+   * which read the file twice.
    */
   static load(
     path: string = DEFAULT_CREDENTIAL_PATH,

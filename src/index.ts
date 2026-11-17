@@ -9,7 +9,8 @@ import { createServer } from "./server.js";
 async function main() {
   // GSC_CREDENTIALS_PATH lets you point at a non-default credential file.
   const credPath = process.env.GSC_CREDENTIALS_PATH || DEFAULT_CREDENTIAL_PATH;
-  // One read of the file decides both the warning and the per-tool error.
+  // One read at startup decides both the warning and the per-tool error; a
+  // credential fixed later takes effect when the server is restarted.
   const loaded = GoogleAuth.load(credPath);
   const auth = "auth" in loaded ? loaded.auth : null;
   const credentialProblem = "problem" in loaded ? loaded.problem : undefined;

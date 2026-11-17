@@ -79,7 +79,7 @@ describe("GoogleAuth.check", () => {
     expect(GoogleAuth.check(dir)).toBe("unreadable");
     expect(GoogleAuth.tryLoad(dir)).toBeNull();
     expect(new CredentialMissingError(dir, "unreadable").message).toBe(
-      `Google Search Console credential at ${dir} could not be read. Check the file's permissions, or replace it. ` +
+      `Google Search Console credential at ${dir} could not be read as a file. Check that the path names a readable file (not a directory, and every parent folder exists), or replace it. ` +
         "Mint one by running the OAuth flow for the webmasters scope — see the README. It opens a browser for a single consent click.",
     );
     rmSync(dir, { recursive: true, force: true });
