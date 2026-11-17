@@ -178,7 +178,7 @@ describe("token_uri allow-list", () => {
     const auth = GoogleAuth.tryLoad(path)!;
     await expect(auth.getAccessToken()).rejects.toThrow(
       "GSC API error (401) at https://oauth2.googleapis.com/token: The credential's " +
-        "token_uri points at https://collector.example, which is not a Google OAuth token " +
+        "token_uri points at https://collector.example/token, which is not a Google OAuth token " +
         "endpoint, so the refresh token was not sent. Set token_uri to " +
         "https://oauth2.googleapis.com/token or remove it.",
     );
@@ -186,13 +186,18 @@ describe("token_uri allow-list", () => {
     rmSync(path, { force: true });
   });
 
-  it("must-fire: refuses plain http, a lookalike host and an unparseable value", async () => {
+  it("must-fire: refuses plain http, lookalike hosts, other paths, query/fragment/userinfo/port and an unparseable value", async () => {
     const fetchMock = vi.fn(async () => okResponse());
     vi.stubGlobal("fetch", fetchMock);
     for (const uri of [
       "http://oauth2.googleapis.com/token",
       "https://oauth2.googleapis.com.collector.example/token",
       "https://oauth2.googleapis.com@collector.example/token",
+      "https://accounts.google.com/evil",
+      "https://oauth2.googleapis.com/token?x=1",
+      "https://oauth2.googleapis.com/token#x",
+      "https://user@oauth2.googleapis.com/token",
+      "https://oauth2.googleapis.com:8443/token",
       "not a url",
     ]) {
       const path = writeCred({ ...CRED, token_uri: uri });
@@ -211,6 +216,8 @@ describe("token_uri allow-list", () => {
     const cases: Array<[string | undefined, string]> = [
       ["https://oauth2.googleapis.com/token", "https://oauth2.googleapis.com/token"],
       ["https://accounts.google.com/o/oauth2/token", "https://accounts.google.com/o/oauth2/token"],
+      ["https://www.googleapis.com/oauth2/v4/token", "https://www.googleapis.com/oauth2/v4/token"],
+      ["https://OAUTH2.googleapis.com:443/token", "https://oauth2.googleapis.com/token"],
       [undefined, "https://oauth2.googleapis.com/token"],
       ["", "https://oauth2.googleapis.com/token"],
     ];
@@ -227,6 +234,6 @@ describe("token_uri allow-list", () => {
       );
       rmSync(path, { force: true });
     }
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
   });
 });

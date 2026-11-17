@@ -20,16 +20,19 @@ export const DEFAULT_CREDENTIAL_PATH = join(
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
 /**
- * Hosts allowed to receive the refresh grant. google-auth writes
- * `oauth2.googleapis.com`; `accounts.google.com` is the legacy endpoint older
- * credential files carry.
+ * The only URLs allowed to receive the refresh grant. google-auth writes the
+ * first; the other two are legacy endpoints older credential files carry.
  */
-const TOKEN_HOSTS = new Set(["oauth2.googleapis.com", "accounts.google.com"]);
+const TOKEN_ENDPOINTS = new Set([
+  TOKEN_ENDPOINT,
+  "https://accounts.google.com/o/oauth2/token",
+  "https://www.googleapis.com/oauth2/v4/token",
+]);
 
 /**
  * The URL the refresh grant (client_secret + refresh_token) is posted to.
- * `token_uri` comes from the credential file; it is honoured only when it is an
- * https Google token endpoint, so an edited or copied file cannot send the
+ * `token_uri` comes from the credential file; it is honoured only when it is
+ * exactly one of `TOKEN_ENDPOINTS` (no query, fragment or userinfo), so an edited or copied file cannot send the
  * refresh token to another host.
  */
 export function resolveTokenEndpoint(tokenUri: string | undefined): string {
@@ -44,15 +47,16 @@ export function resolveTokenEndpoint(tokenUri: string | undefined): string {
         `${TOKEN_ENDPOINT} or remove it.`,
     );
   }
-  if (url.protocol !== "https:" || !TOKEN_HOSTS.has(url.hostname)) {
+  const endpoint = `${url.protocol}//${url.host}${url.pathname}`;
+  if (!TOKEN_ENDPOINTS.has(endpoint) || url.username || url.password || url.search || url.hash) {
     throw new AuthError(
       TOKEN_ENDPOINT,
-      `The credential's token_uri points at ${url.protocol}//${url.host}, which is ` +
+      `The credential's token_uri points at ${endpoint}, which is ` +
         "not a Google OAuth token endpoint, so the refresh token was not sent. Set " +
         `token_uri to ${TOKEN_ENDPOINT} or remove it.`,
     );
   }
-  return url.href;
+  return endpoint;
 }
 
 /** The subset of google-auth's to_json() output that we need. */
