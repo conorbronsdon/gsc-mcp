@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
@@ -83,12 +83,14 @@ export class GoogleAuth {
   private static read(
     path: string,
   ): { cred: StoredCredential } | { problem: CredentialProblem } {
-    if (!existsSync(path)) return { problem: "missing" };
+    // One read, classified by its error code. A separate existsSync check would
+    // race a file being rewritten in place and mislabel it "unreadable".
     let raw: string;
     try {
       raw = readFileSync(path, "utf-8");
-    } catch {
-      return { problem: "unreadable" };
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException | undefined)?.code;
+      return { problem: code === "ENOENT" ? "missing" : "unreadable" };
     }
     let parsed: StoredCredential;
     try {
