@@ -123,7 +123,8 @@ export class GoogleAuth {
       throw new AuthError(
         TOKEN_ENDPOINT,
         `Token refresh failed (HTTP ${response.status}). The refresh token may be ` +
-          `revoked or expired — re-mint with scripts/seo-auth-setup.py. ${text.slice(0, 200)}`,
+          `revoked or expired — re-mint it as described in the README's Authentication ` +
+          `section. ${text.slice(0, 200)}`,
       );
     }
 

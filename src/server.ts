@@ -52,14 +52,18 @@ export interface RegisterGscToolsOptions {
 
 /**
  * Standalone gsc-mcp server: a fresh McpServer with every Search Console tool
- * registered. This is what the `gsc-mcp` binary runs.
+ * registered. This is what the `gsc-mcp` binary runs. `options` is passed
+ * through to {@link registerGscTools}.
  */
-export function createServer(client: GSCClient | null): McpServer {
+export function createServer(
+  client: GSCClient | null,
+  options: RegisterGscToolsOptions = {},
+): McpServer {
   const server = new McpServer({
     name: "gsc-mcp",
     version: VERSION,
   });
-  registerGscTools(server, client);
+  registerGscTools(server, client, options);
   return server;
 }
 
@@ -250,7 +254,10 @@ export function registerGscTools(
         site_url: siteUrlArg,
         start_date: z
           .string()
-          .describe("Start date, YYYY-MM-DD (default: 28 days before end_date if omitted in your call)."),
+          .describe(
+            "Start date, YYYY-MM-DD (Pacific Time, inclusive). Required; a 28-day " +
+              "window (start_date 27 days before end_date) is a good default.",
+          ),
         end_date: z.string().describe("End date, YYYY-MM-DD (lag ~2-3 days behind today)."),
         min_impressions: z
           .number()
@@ -366,7 +373,8 @@ export function registerGscTools(
         "Submit (or re-submit) a sitemap to Google Search Console for a property. " +
         "This is a WRITE action: it registers the sitemap and pings Google to crawl " +
         "it. Requires the full webmasters OAuth scope — if the saved credential is " +
-        "read-only, re-mint with scripts/seo-auth-setup.py. Idempotent: re-submitting " +
+        "read-only, re-run the OAuth flow from the README requesting the full scope. " +
+        "Idempotent: re-submitting " +
         "the same sitemap URL just refreshes it.",
       inputSchema: {
         site_url: siteUrlArg,

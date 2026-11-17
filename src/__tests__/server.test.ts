@@ -96,6 +96,14 @@ describe("tool registry + annotations", () => {
     expect(tools["gsc_delete_sitemap"].annotations.readOnlyHint).toBe(false);
     expect(tools["gsc_delete_sitemap"].annotations.destructiveHint).toBe(true);
   });
+
+  it("no tool description sends the user to a script that is not shipped", () => {
+    const server = serverReturning({});
+    const tools = (server as any)._registeredTools as Record<string, any>;
+    for (const name of EXPECTED_TOOLS) {
+      expect(tools[name].description, name).not.toMatch(/\.py\b/);
+    }
+  });
 });
 
 describe("keyless start", () => {
@@ -117,6 +125,15 @@ describe("keyless start", () => {
     const badRemedy = "Re-mint it with scripts/setup.py from the private repo.";
     expect(badRemedy).toMatch(/\.py\b/);
     expect(badRemedy).toMatch(/\brepo(sitory)?\b/i);
+  });
+});
+
+describe("keyless start with a custom credential path", () => {
+  it("names the configured path, not the default, in the setup error", async () => {
+    const server = createServer(null, { credentialPath: "/custom/gsc-cred.json" });
+    const out = await callTool(server, "gsc_list_sites", {});
+    expect(out.__error).toContain("/custom/gsc-cred.json");
+    expect(out.__error).not.toContain("searchconsole_credentials.json");
   });
 });
 
@@ -182,6 +199,16 @@ describe("gsc_striking_distance tool", () => {
     });
     expect(out.count).toBe(1);
     expect(out.queries[0].query).toBe("striking kw");
+  });
+});
+
+describe("gsc_striking_distance schema", () => {
+  it("start_date is required and its description does not promise a default", () => {
+    const server = serverReturning({});
+    const tool = (server as any)._registeredTools["gsc_striking_distance"];
+    const shape = tool.inputSchema.shape;
+    expect(shape.start_date.isOptional()).toBe(false);
+    expect(shape.start_date.description).not.toMatch(/if omitted/i);
   });
 });
 

@@ -27,12 +27,14 @@ async function main() {
     console.error(
       "Note: the credential has only the read-only (webmasters.readonly) scope. " +
         "Read tools work; gsc_submit_sitemap and gsc_delete_sitemap need the full " +
-        "webmasters scope — re-run scripts/seo-auth-setup.py to upgrade.",
+        "webmasters scope — re-run the OAuth flow from the README with that scope to upgrade.",
     );
   }
 
   const client = auth ? new GSCClient(auth) : null;
-  const server = createServer(client);
+  // Pass the resolved path so the per-tool setup error names the file this
+  // process actually looked for (GSC_CREDENTIALS_PATH or the default).
+  const server = createServer(client, { credentialPath: credPath });
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Google Search Console MCP server running on stdio");
