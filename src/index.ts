@@ -9,8 +9,10 @@ import { createServer } from "./server.js";
 async function main() {
   // GSC_CREDENTIALS_PATH lets you point at a non-default credential file.
   const credPath = process.env.GSC_CREDENTIALS_PATH || DEFAULT_CREDENTIAL_PATH;
-  const auth = GoogleAuth.tryLoad(credPath);
-  const credentialProblem = auth ? undefined : (GoogleAuth.check(credPath) ?? undefined);
+  // One read of the file decides both the warning and the per-tool error.
+  const loaded = GoogleAuth.load(credPath);
+  const auth = "auth" in loaded ? loaded.auth : null;
+  const credentialProblem = "problem" in loaded ? loaded.problem : undefined;
 
   // Start keyless: the server must boot and answer tools/list even with no
   // credential, so MCP inspectors (e.g. Glama) can introspect it. Tool *calls*

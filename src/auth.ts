@@ -54,8 +54,20 @@ export class GoogleAuth {
    * per-tool. {@link GoogleAuth.check} says which of those it was.
    */
   static tryLoad(path: string = DEFAULT_CREDENTIAL_PATH): GoogleAuth | null {
+    const result = GoogleAuth.load(path);
+    return "auth" in result ? result.auth : null;
+  }
+
+  /**
+   * Read the credential once and return either the loaded auth or why it could
+   * not be loaded. The standalone server uses this so its startup warning and
+   * per-tool error come from a single observation of the file.
+   */
+  static load(
+    path: string = DEFAULT_CREDENTIAL_PATH,
+  ): { auth: GoogleAuth } | { problem: CredentialProblem } {
     const result = GoogleAuth.read(path);
-    return "cred" in result ? new GoogleAuth(result.cred) : null;
+    return "cred" in result ? { auth: new GoogleAuth(result.cred) } : result;
   }
 
   /**
@@ -64,7 +76,7 @@ export class GoogleAuth {
    * (malformed JSON, or the OAuth client file saved in place of the token).
    */
   static check(path: string = DEFAULT_CREDENTIAL_PATH): CredentialProblem | null {
-    const result = GoogleAuth.read(path);
+    const result = GoogleAuth.load(path);
     return "problem" in result ? result.problem : null;
   }
 
