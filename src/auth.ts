@@ -92,7 +92,10 @@ export class GoogleAuth {
       raw = readFileSync(path, "utf-8");
     } catch (err) {
       const code = (err as NodeJS.ErrnoException | undefined)?.code;
-      return { problem: code === "ENOENT" ? "missing" : "unreadable" };
+      // ENOENT: no such file. ENOTDIR: a parent in the path is a file, so there
+      // is no file here either. Anything else (EACCES, EISDIR, ...) means a
+      // path that exists but cannot be read as a file.
+      return { problem: code === "ENOENT" || code === "ENOTDIR" ? "missing" : "unreadable" };
     }
     let parsed: StoredCredential;
     try {

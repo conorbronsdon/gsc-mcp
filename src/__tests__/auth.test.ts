@@ -79,10 +79,17 @@ describe("GoogleAuth.check", () => {
     expect(GoogleAuth.check(dir)).toBe("unreadable");
     expect(GoogleAuth.tryLoad(dir)).toBeNull();
     expect(new CredentialMissingError(dir, "unreadable").message).toBe(
-      `Google Search Console credential at ${dir} could not be read as a file. Check that the path names a readable file (not a directory, and every parent folder exists), or replace it. ` +
+      `Google Search Console credential at ${dir} could not be read as a file. Check that the path names a file (not a directory) and that this process has permission to read it, or replace it. ` +
         "Mint one by running the OAuth flow for the webmasters scope — see the README. It opens a browser for a single consent click.",
     );
     rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("is 'missing' when a parent in the path is a file (ENOTDIR), not 'unreadable'", () => {
+    const file = writeCred({ client_id: "example-client-id" });
+    // `<file>/cred.json`: the parent is a regular file, so readFileSync throws ENOTDIR.
+    expect(GoogleAuth.check(join(file, "cred.json"))).toBe("missing");
+    rmSync(file, { force: true });
   });
 
   it("load() returns the auth or the problem from one read", () => {
