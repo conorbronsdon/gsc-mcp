@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { GoogleAuth } from "../auth.js";
 import { GSCClient } from "../client.js";
 import {
   AuthError,
@@ -7,7 +11,6 @@ import {
   RateLimitError,
   ScopeError,
 } from "../errors.js";
-import type { GoogleAuth } from "../auth.js";
 
 /** A stub GoogleAuth that hands out a fixed token and a configurable write scope. */
 function fakeAuth(hasWrite = true): GoogleAuth {
@@ -157,6 +160,77 @@ describe("GSCClient sitemap writes gate on scope", () => {
     await client.deleteSitemap("sc-domain:example.com", "https://example.com/sitemap.xml");
     const [, opts] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(opts.method).toBe("DELETE");
+  });
+});
+
+describe("GSCClient sitemap writes with a real GoogleAuth (issue #45)", () => {
+  function loadAuth(scopes: string[]): { auth: GoogleAuth; dir: string } {
+    const dir = mkdtempSync(join(tmpdir(), "gsc-scope-"));
+    const path = join(dir, "cred.json");
+    writeFileSync(
+      path,
+      JSON.stringify({
+        client_id: "example-client-id",
+        client_secret: "example-client-secret",
+        refresh_token: "example-refresh-token",
+        scopes,
+      }),
+    );
+    return { auth: GoogleAuth.tryLoad(path)!, dir };
+  }
+
+  it("readonly + siteverification: submitSitemap throws ScopeError before any fetch", async () => {
+    const fetchMock = mockFetch(200, { access_token: "example-at", expires_in: 3600 });
+    vi.stubGlobal("fetch", fetchMock);
+    const { auth, dir } = loadAuth([
+      "https://www.googleapis.com/auth/webmasters.readonly",
+      "https://www.googleapis.com/auth/siteverification",
+    ]);
+    const err = await new GSCClient(auth)
+      .submitSitemap("sc-domain:example.com", "https://example.com/sitemap.xml")
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ScopeError);
+    expect((err as ScopeError).statusCode).toBe(403);
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("readonly + siteverification: deleteSitemap throws ScopeError before any fetch", async () => {
+    const fetchMock = mockFetch(200, { access_token: "example-at", expires_in: 3600 });
+    vi.stubGlobal("fetch", fetchMock);
+    const { auth, dir } = loadAuth([
+      "https://www.googleapis.com/auth/webmasters.readonly",
+      "https://www.googleapis.com/auth/siteverification",
+    ]);
+    const err = await new GSCClient(auth)
+      .deleteSitemap("sc-domain:example.com", "https://example.com/sitemap.xml")
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ScopeError);
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("webmasters scope: submitSitemap passes the gate (token refresh, then PUT)", async () => {
+    const fetchMock = vi.fn(async (url: string): Promise<Response> =>
+      url.startsWith("https://oauth2.googleapis.com/")
+        ? new Response(JSON.stringify({ access_token: "example-at", expires_in: 3600 }), {
+            status: 200,
+          })
+        : new Response("", { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { auth, dir } = loadAuth(["https://www.googleapis.com/auth/webmasters"]);
+    await new GSCClient(auth).submitSitemap(
+      "sc-domain:example.com",
+      "https://example.com/sitemap.xml",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [url, opts] = fetchMock.mock.calls[1] as unknown as [string, RequestInit];
+    expect(opts.method).toBe("PUT");
+    expect(url).toBe(
+      "https://www.googleapis.com/webmasters/v3/sites/sc-domain%3Aexample.com/sitemaps/https%3A%2F%2Fexample.com%2Fsitemap.xml",
+    );
+    rmSync(dir, { recursive: true, force: true });
   });
 });
 
