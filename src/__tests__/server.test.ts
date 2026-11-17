@@ -113,15 +113,23 @@ describe("keyless start", () => {
     expect(Object.keys(tools)).toHaveLength(EXPECTED_TOOLS.length);
     const out = await callTool(server, "gsc_list_sites", {});
     expect(out.__error).toMatch(/credential not found/i);
-    expect(out.__error).toMatch(/credential not found/i);
     // The remedy must be actionable for a stranger: no private repo, no script
     // they cannot run. It points at the README and the scope they need.
     expect(out.__error).toMatch(/README/);
     // Guarded generically on purpose: naming the private repos here would put
     // them in a public file, which is the thing being guarded against. A remedy
     // that sends someone to a script or a repo path is the failure mode.
-    expect(out.__error).not.toMatch(/\.py/);
-    expect(out.__error).not.toMatch(/repo(sitory)?/i);
+    // The negative control below reuses these exact guard objects, so a guard
+    // edited into a form that cannot match (e.g. a literal backspace for \b)
+    // turns the control red instead of passing vacuously.
+    const scriptGuard = /\.py\b/;
+    const repoGuard = /\brepo(sitory)?\b/i;
+    expect(out.__error).not.toMatch(scriptGuard);
+    expect(out.__error).not.toMatch(repoGuard);
+    // Negative control: the guards must be able to go red on the failure mode.
+    const badRemedy = "Re-mint it with scripts/setup.py from the private repo.";
+    expect(badRemedy).toMatch(scriptGuard);
+    expect(badRemedy).toMatch(repoGuard);
   });
 });
 
