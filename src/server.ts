@@ -5,6 +5,7 @@ import type { GSCClient } from "./client.js";
 import { CredentialMissingError } from "./errors.js";
 import { round, shapeRow, stripNulls } from "./shape.js";
 import type { UrlInspectionResult } from "./types.js";
+import { VERSION } from "./version.js";
 
 const json = (data: unknown) => ({
   content: [
@@ -56,7 +57,7 @@ export interface RegisterGscToolsOptions {
 export function createServer(client: GSCClient | null): McpServer {
   const server = new McpServer({
     name: "gsc-mcp",
-    version: "0.1.0",
+    version: VERSION,
   });
   registerGscTools(server, client);
   return server;
