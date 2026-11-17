@@ -32,7 +32,9 @@ async function main() {
   }
 
   const client = auth ? new GSCClient(auth) : null;
-  const server = createServer(client);
+  // Pass the resolved path so the per-tool setup error names the file this
+  // process actually looked for (GSC_CREDENTIALS_PATH or the default).
+  const server = createServer(client, { credentialPath: credPath });
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Google Search Console MCP server running on stdio");

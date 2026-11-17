@@ -117,6 +117,15 @@ describe("keyless start", () => {
   });
 });
 
+describe("keyless start with a custom credential path", () => {
+  it("names the configured path, not the default, in the setup error", async () => {
+    const server = createServer(null, { credentialPath: "/custom/gsc-cred.json" });
+    const out = await callTool(server, "gsc_list_sites", {});
+    expect(out.__error).toContain("/custom/gsc-cred.json");
+    expect(out.__error).not.toContain("searchconsole_credentials.json");
+  });
+});
+
 describe("gsc_list_sites tool", () => {
   it("returns properties with permission levels", async () => {
     const server = serverReturning({

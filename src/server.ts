@@ -52,14 +52,18 @@ export interface RegisterGscToolsOptions {
 
 /**
  * Standalone gsc-mcp server: a fresh McpServer with every Search Console tool
- * registered. This is what the `gsc-mcp` binary runs.
+ * registered. This is what the `gsc-mcp` binary runs. `options` is passed
+ * through to {@link registerGscTools}.
  */
-export function createServer(client: GSCClient | null): McpServer {
+export function createServer(
+  client: GSCClient | null,
+  options: RegisterGscToolsOptions = {},
+): McpServer {
   const server = new McpServer({
     name: "gsc-mcp",
     version: VERSION,
   });
-  registerGscTools(server, client);
+  registerGscTools(server, client, options);
   return server;
 }
 
