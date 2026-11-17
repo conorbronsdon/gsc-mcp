@@ -14,6 +14,7 @@ function writeCred(contents: unknown): string {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("GoogleAuth.tryLoad", () => {
@@ -158,5 +159,91 @@ describe("GoogleAuth.getAccessToken", () => {
     expect((err as Error).message).toMatch(/README/);
     expect((err as Error).message).not.toMatch(/\.py\b/);
     rmSync(path, { force: true });
+  });
+});
+
+describe("token_uri allow-list", () => {
+  const CRED = {
+    client_id: "example-client-not-real.apps.googleusercontent.com",
+    client_secret: "example-secret-not-real",
+    refresh_token: "example-refresh-token-not-real",
+    scopes: [],
+  };
+  const okResponse = () =>
+    new Response(JSON.stringify({ access_token: "example-token-not-real", expires_in: 3600 }));
+
+  it("must-fire: refuses a non-Google token_uri and sends nothing", async () => {
+    const fetchMock = vi.fn(async () => okResponse());
+    vi.stubGlobal("fetch", fetchMock);
+    const path = writeCred({ ...CRED, token_uri: "https://collector.example/token" });
+    const auth = GoogleAuth.tryLoad(path)!;
+    await expect(auth.getAccessToken()).rejects.toThrow(
+      "GSC API error (401) at https://oauth2.googleapis.com/token: The credential's " +
+        "token_uri points at https://collector.example/token, which is not a Google OAuth token " +
+        "endpoint, so the refresh token was not sent. Set token_uri to " +
+        "https://oauth2.googleapis.com/token or remove it.",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+    rmSync(path, { force: true });
+  });
+
+  it("must-fire: refuses plain http, lookalike hosts, other paths, query/fragment/userinfo/port and an unparseable value", async () => {
+    const fetchMock = vi.fn(async () => okResponse());
+    vi.stubGlobal("fetch", fetchMock);
+    for (const uri of [
+      "http://oauth2.googleapis.com/token",
+      "https://oauth2.googleapis.com.collector.example/token",
+      "https://oauth2.googleapis.com@collector.example/token",
+      "https://accounts.google.com/evil",
+      "https://oauth2.googleapis.com/token?x=1",
+      "https://oauth2.googleapis.com/token#x",
+      "https://user@oauth2.googleapis.com/token",
+      "https://oauth2.googleapis.com:8443/token",
+      "not a url",
+    ]) {
+      const path = writeCred({ ...CRED, token_uri: uri });
+      const auth = GoogleAuth.tryLoad(path)!;
+      const err = await auth.getAccessToken().catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(AuthError);
+      expect((err as Error).message).not.toContain("example-refresh-token-not-real");
+      rmSync(path, { force: true });
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+  });
+
+  it("names the endpoint it actually used when a legacy endpoint refuses the refresh", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("bad", { status: 400 })));
+    const path = writeCred({ ...CRED, token_uri: "https://accounts.google.com/o/oauth2/token" });
+    const err = await GoogleAuth.tryLoad(path)!.getAccessToken().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(AuthError);
+    expect((err as AuthError).endpoint).toBe("https://accounts.google.com/o/oauth2/token");
+    rmSync(path, { force: true });
+  });
+
+  it("must-not-fire: Google endpoints and a missing token_uri still refresh", async () => {
+    const fetchMock = vi.fn(async () => okResponse());
+    vi.stubGlobal("fetch", fetchMock);
+    const cases: Array<[string | undefined, string]> = [
+      ["https://oauth2.googleapis.com/token", "https://oauth2.googleapis.com/token"],
+      ["https://accounts.google.com/o/oauth2/token", "https://accounts.google.com/o/oauth2/token"],
+      ["https://www.googleapis.com/oauth2/v4/token", "https://www.googleapis.com/oauth2/v4/token"],
+      ["https://OAUTH2.googleapis.com:443/token", "https://oauth2.googleapis.com/token"],
+      [undefined, "https://oauth2.googleapis.com/token"],
+      ["", "https://oauth2.googleapis.com/token"],
+    ];
+    for (const [i, [uri, expected]] of cases.entries()) {
+      const path = writeCred({ ...CRED, token_uri: uri });
+      const auth = GoogleAuth.tryLoad(path)!;
+      expect(await auth.getAccessToken()).toBe("example-token-not-real");
+      const [url, init] = fetchMock.mock.calls[i] as unknown as [string, RequestInit];
+      expect(url).toBe(expected);
+      expect(String(init.body)).toBe(
+        "client_id=example-client-not-real.apps.googleusercontent.com" +
+          "&client_secret=example-secret-not-real" +
+          "&refresh_token=example-refresh-token-not-real&grant_type=refresh_token",
+      );
+      rmSync(path, { force: true });
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(6);
   });
 });

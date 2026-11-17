@@ -19,6 +19,46 @@ export const DEFAULT_CREDENTIAL_PATH = join(
 
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
+/**
+ * The only URLs allowed to receive the refresh grant. google-auth writes the
+ * first; the other two are legacy endpoints older credential files carry.
+ */
+const TOKEN_ENDPOINTS = new Set([
+  TOKEN_ENDPOINT,
+  "https://accounts.google.com/o/oauth2/token",
+  "https://www.googleapis.com/oauth2/v4/token",
+]);
+
+/**
+ * The URL the refresh grant (client_secret + refresh_token) is posted to.
+ * `token_uri` comes from the credential file; it is honoured only when it is
+ * exactly one of `TOKEN_ENDPOINTS` (no query, fragment or userinfo), so an edited or copied file cannot send the
+ * refresh token to another host.
+ */
+export function resolveTokenEndpoint(tokenUri: string | undefined): string {
+  if (!tokenUri) return TOKEN_ENDPOINT;
+  let url: URL;
+  try {
+    url = new URL(tokenUri);
+  } catch {
+    throw new AuthError(
+      TOKEN_ENDPOINT,
+      "The credential's token_uri is not a valid URL. Set it to " +
+        `${TOKEN_ENDPOINT} or remove it.`,
+    );
+  }
+  const endpoint = `${url.protocol}//${url.host}${url.pathname}`;
+  if (!TOKEN_ENDPOINTS.has(endpoint) || url.username || url.password || url.search || url.hash) {
+    throw new AuthError(
+      TOKEN_ENDPOINT,
+      `The credential's token_uri points at ${endpoint}, which is ` +
+        "not a Google OAuth token endpoint, so the refresh token was not sent. Set " +
+        `token_uri to ${TOKEN_ENDPOINT} or remove it.`,
+    );
+  }
+  return endpoint;
+}
+
 /** The subset of google-auth's to_json() output that we need. */
 interface StoredCredential {
   client_id?: string;
@@ -93,6 +133,7 @@ export class GoogleAuth {
   }
 
   private async refresh(): Promise<string> {
+    const endpoint = resolveTokenEndpoint(this.cred.token_uri);
     const body = new URLSearchParams({
       client_id: this.cred.client_id!,
       client_secret: this.cred.client_secret!,
@@ -102,14 +143,14 @@ export class GoogleAuth {
 
     let response: Response;
     try {
-      response = await fetch(this.cred.token_uri || TOKEN_ENDPOINT, {
+      response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: body.toString(),
       });
     } catch (err) {
       throw new AuthError(
-        TOKEN_ENDPOINT,
+        endpoint,
         `Network error refreshing the access token: ${
           err instanceof Error ? err.message : String(err)
         }`,
@@ -119,7 +160,7 @@ export class GoogleAuth {
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       throw new AuthError(
-        TOKEN_ENDPOINT,
+        endpoint,
         `Token refresh failed (HTTP ${response.status}). The refresh token may be ` +
           `revoked or expired — re-mint it as described in the README's Authentication ` +
           `section. ${text.slice(0, 200)}`,
@@ -131,7 +172,7 @@ export class GoogleAuth {
       expires_in?: number;
     };
     if (!data.access_token) {
-      throw new AuthError(TOKEN_ENDPOINT, "Token endpoint returned no access_token.");
+      throw new AuthError(endpoint, "Token endpoint returned no access_token.");
     }
     this.accessToken = data.access_token;
     this.expiresAt = Date.now() + (data.expires_in ?? 3600) * 1000;
