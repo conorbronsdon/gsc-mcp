@@ -52,6 +52,13 @@ describe("GSCClient.request auth + headers", () => {
     );
   });
 
+  it("AuthError's remedy points at the README, not an unshipped script", async () => {
+    vi.stubGlobal("fetch", mockFetch(401, "unauthorized"));
+    const err = await new GSCClient(fakeAuth()).listSites().catch((e: unknown) => e);
+    expect((err as Error).message).toMatch(/README/);
+    expect((err as Error).message).not.toMatch(/\.py\b/);
+  });
+
   it("throws RateLimitError on 429", async () => {
     vi.stubGlobal("fetch", mockFetch(429, "slow down"));
     await expect(new GSCClient(fakeAuth()).listSites()).rejects.toBeInstanceOf(

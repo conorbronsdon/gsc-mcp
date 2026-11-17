@@ -27,7 +27,7 @@ async function main() {
     console.error(
       "Note: the credential has only the read-only (webmasters.readonly) scope. " +
         "Read tools work; gsc_submit_sitemap and gsc_delete_sitemap need the full " +
-        "webmasters scope — re-run scripts/seo-auth-setup.py to upgrade.",
+        "webmasters scope — re-run the OAuth flow from the README with that scope to upgrade.",
     );
   }
 
