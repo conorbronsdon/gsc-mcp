@@ -39,6 +39,7 @@ function buildAnnotations(
 }
 
 const STRIKING_POS_MIN = 8.0;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const STRIKING_POS_MAX = 25.0;
 
 /** Options for {@link registerGscTools}. */
@@ -105,6 +106,13 @@ export function registerGscTools(
     };
   }
 
+  /** Strict calendar-date shape the Search Analytics API expects. */
+  const dateArg = (description: string) =>
+    z
+      .string()
+      .regex(DATE_RE, "Expected a date in YYYY-MM-DD form, e.g. 2026-05-01.")
+      .describe(description);
+
   const siteUrlArg = z
     .string()
     .describe(
@@ -150,12 +158,8 @@ export function registerGscTools(
         "lags ~2-3 days, so end your range a few days before today.",
       inputSchema: {
         site_url: siteUrlArg,
-        start_date: z
-          .string()
-          .describe("Start date, YYYY-MM-DD (Pacific Time, inclusive)."),
-        end_date: z
-          .string()
-          .describe("End date, YYYY-MM-DD (Pacific Time, inclusive)."),
+        start_date: dateArg("Start date, YYYY-MM-DD (Pacific Time, inclusive)."),
+        end_date: dateArg("End date, YYYY-MM-DD (Pacific Time, inclusive)."),
         dimensions: z
           .array(z.enum(["query", "page", "country", "device", "date"]))
           .optional()
@@ -166,6 +170,9 @@ export function registerGscTools(
           ),
         row_limit: z
           .number()
+          .int()
+          .min(1)
+          .max(1000)
           .optional()
           .default(25)
           .describe("Max rows to return (default 25, cap 1000). Keep low; rows cost tokens."),
@@ -176,29 +183,49 @@ export function registerGscTools(
         dimension_filter_groups: z
           .array(
             z.object({
-              groupType: z.enum(["and"]).optional(),
-              filters: z.array(
-                z.object({
-                  dimension: z.enum([
-                    "query",
-                    "page",
-                    "country",
-                    "device",
-                    "searchAppearance",
-                  ]),
-                  operator: z
-                    .enum([
-                      "equals",
-                      "notEquals",
-                      "contains",
-                      "notContains",
-                      "includingRegex",
-                      "excludingRegex",
-                    ])
-                    .optional(),
-                  expression: z.string(),
-                }),
-              ),
+              groupType: z
+                .enum(["and"])
+                .optional()
+                .describe(
+                  "How the filters in this group combine. Only 'and' is supported " +
+                    "(the default).",
+                ),
+              filters: z
+                .array(
+                  z.object({
+                    dimension: z
+                      .enum([
+                        "query",
+                        "page",
+                        "country",
+                        "device",
+                        "searchAppearance",
+                      ])
+                      .describe("The dimension this filter tests."),
+                    operator: z
+                      .enum([
+                        "equals",
+                        "notEquals",
+                        "contains",
+                        "notContains",
+                        "includingRegex",
+                        "excludingRegex",
+                      ])
+                      .optional()
+                      .describe(
+                        "How expression is matched against the dimension value. " +
+                          "Defaults to 'equals' (applied by Google) when omitted.",
+                      ),
+                    expression: z
+                      .string()
+                      .describe(
+                        "The value to match, e.g. '/blog/' for page contains, 'MOBILE' " +
+                          "for device, or a three-letter country code like 'usa'. A " +
+                          "regex for includingRegex/excludingRegex (RE2 syntax).",
+                      ),
+                  }),
+                )
+                .describe("The filters in this group; all must match (AND)."),
             }),
           )
           .optional()
@@ -218,13 +245,12 @@ export function registerGscTools(
       type,
       dimension_filter_groups,
     }) => {
-      const cappedLimit = Math.min(Math.max(1, row_limit), 1000);
       const data = await need().searchAnalytics({
         siteUrl: site_url,
         startDate: start_date,
         endDate: end_date,
         dimensions,
-        rowLimit: cappedLimit,
+        rowLimit: row_limit,
         type,
         dimensionFilterGroups: dimension_filter_groups,
       });
@@ -252,15 +278,15 @@ export function registerGscTools(
         "client-side from search analytics; returns queries sorted by impressions.",
       inputSchema: {
         site_url: siteUrlArg,
-        start_date: z
-          .string()
-          .describe(
-            "Start date, YYYY-MM-DD (Pacific Time, inclusive). Required; a 28-day " +
-              "window (start_date 27 days before end_date) is a good default.",
-          ),
-        end_date: z.string().describe("End date, YYYY-MM-DD (lag ~2-3 days behind today)."),
+        start_date: dateArg(
+          "Start date, YYYY-MM-DD (Pacific Time, inclusive). Required; a 28-day " +
+            "window (start_date 27 days before end_date) is a good default.",
+        ),
+        end_date: dateArg("End date, YYYY-MM-DD (lag ~2-3 days behind today)."),
         min_impressions: z
           .number()
+          .int()
+          .min(0)
           .optional()
           .default(10)
           .describe("Only include queries with at least this many impressions (default 10)."),
@@ -276,6 +302,8 @@ export function registerGscTools(
           .describe(`Upper bound of the striking-distance band (default ${STRIKING_POS_MAX}).`),
         limit: z
           .number()
+          .int()
+          .min(1)
           .optional()
           .default(25)
           .describe("Max queries to return, ranked by impressions (default 25)."),
@@ -314,7 +342,7 @@ export function registerGscTools(
             r.impressions >= min_impressions,
         )
         .sort((a, b) => b.impressions - a.impressions)
-        .slice(0, Math.max(1, limit));
+        .slice(0, limit);
 
       return json({
         siteUrl: site_url,
