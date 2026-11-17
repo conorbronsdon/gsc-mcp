@@ -96,6 +96,14 @@ describe("tool registry + annotations", () => {
     expect(tools["gsc_delete_sitemap"].annotations.readOnlyHint).toBe(false);
     expect(tools["gsc_delete_sitemap"].annotations.destructiveHint).toBe(true);
   });
+
+  it("no tool description sends the user to a script that is not shipped", () => {
+    const server = serverReturning({});
+    const tools = (server as any)._registeredTools as Record<string, any>;
+    for (const name of EXPECTED_TOOLS) {
+      expect(tools[name].description, name).not.toMatch(/\.py\b/);
+    }
+  });
 });
 
 describe("keyless start", () => {

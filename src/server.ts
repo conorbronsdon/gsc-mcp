@@ -373,7 +373,8 @@ export function registerGscTools(
         "Submit (or re-submit) a sitemap to Google Search Console for a property. " +
         "This is a WRITE action: it registers the sitemap and pings Google to crawl " +
         "it. Requires the full webmasters OAuth scope — if the saved credential is " +
-        "read-only, re-mint with scripts/seo-auth-setup.py. Idempotent: re-submitting " +
+        "read-only, re-run the OAuth flow from the README requesting the full scope. " +
+        "Idempotent: re-submitting " +
         "the same sitemap URL just refreshes it.",
       inputSchema: {
         site_url: siteUrlArg,

@@ -14,9 +14,9 @@ export class AuthError extends GSCAPIError {
     super(
       401,
       detail ||
-        "Google rejected the credential. The OAuth token at " +
-          "~/.config/gws/searchconsole_credentials.json may be revoked or for the " +
-          "wrong account. Re-mint it with scripts/seo-auth-setup.py.",
+        "Google rejected the credential. The saved OAuth token may be revoked or " +
+          "for the wrong account. Re-mint it with the installed-app OAuth flow " +
+          "described in the README's Authentication section.",
       endpoint,
     );
     this.name = "AuthError";

@@ -110,7 +110,12 @@ describe("GoogleAuth.getAccessToken", () => {
       scopes: [],
     });
     const auth = GoogleAuth.tryLoad(path)!;
-    await expect(auth.getAccessToken()).rejects.toBeInstanceOf(AuthError);
+    const err = await auth.getAccessToken().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(AuthError);
+    // The remedy must point at something a user of the npm package has: the
+    // README, not a script that is not shipped in this repo.
+    expect((err as Error).message).toMatch(/README/);
+    expect((err as Error).message).not.toMatch(/\.py\b/);
     rmSync(path, { force: true });
   });
 });
