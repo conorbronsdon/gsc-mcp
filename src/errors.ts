@@ -63,12 +63,20 @@ export class RateLimitError extends GSCAPIError {
 }
 
 export class NotFoundError extends GSCAPIError {
-  constructor(endpoint: string, identifier: string) {
+  /**
+   * @param identifier the property (site URL) or, with `sitemapOf`, the sitemap
+   *   feedpath that was not found.
+   * @param sitemapOf when set, the 404 is for a sitemap within this property.
+   */
+  constructor(endpoint: string, identifier: string, sitemapOf?: string) {
     super(
       404,
-      `"${identifier}" was not found. Check the property URL (e.g. ` +
-        `sc-domain:example.com or https://example.com/) and that it is verified ` +
-        `in Search Console.`,
+      sitemapOf !== undefined
+        ? `Sitemap "${identifier}" was not found in property "${sitemapOf}". ` +
+            `Check the exact sitemap URL with gsc_list_sitemaps.`
+        : `"${identifier}" was not found. Check the property URL (e.g. ` +
+            `sc-domain:example.com or https://example.com/) and that it is verified ` +
+            `in Search Console.`,
       endpoint,
     );
     this.name = "NotFoundError";

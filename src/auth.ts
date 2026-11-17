@@ -117,14 +117,12 @@ export class GoogleAuth {
 
   /**
    * True when the saved credential includes the full webmasters write scope.
-   * Used to fail fast on write tools before hitting the API.
+   * Used to fail fast on write tools before hitting the API. Only `webmasters`
+   * authorizes sitemaps.submit / sitemaps.delete; the Site Verification scope
+   * does not, so it must not count here.
    */
   hasWriteScope(): boolean {
-    return this.scopes.some(
-      (s) =>
-        s === "https://www.googleapis.com/auth/webmasters" ||
-        s === "https://www.googleapis.com/auth/siteverification",
-    );
+    return this.scopes.includes("https://www.googleapis.com/auth/webmasters");
   }
 
   /** Return a valid access token, refreshing via the token endpoint if needed. */

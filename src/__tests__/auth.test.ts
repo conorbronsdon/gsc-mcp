@@ -138,6 +138,47 @@ describe("GoogleAuth.hasWriteScope", () => {
   });
 });
 
+describe("GoogleAuth.hasWriteScope ignores siteverification", () => {
+  it("is false for webmasters.readonly + siteverification (no webmasters)", () => {
+    const path = writeCred({
+      client_id: "example-client-id",
+      client_secret: "example-client-secret",
+      refresh_token: "example-refresh-token",
+      scopes: [
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "https://www.googleapis.com/auth/siteverification",
+      ],
+    });
+    expect(GoogleAuth.tryLoad(path)!.hasWriteScope()).toBe(false);
+    rmSync(path, { force: true });
+  });
+
+  it("is false for siteverification alone", () => {
+    const path = writeCred({
+      client_id: "example-client-id",
+      client_secret: "example-client-secret",
+      refresh_token: "example-refresh-token",
+      scopes: ["https://www.googleapis.com/auth/siteverification"],
+    });
+    expect(GoogleAuth.tryLoad(path)!.hasWriteScope()).toBe(false);
+    rmSync(path, { force: true });
+  });
+
+  it("is still true when webmasters sits beside siteverification", () => {
+    const path = writeCred({
+      client_id: "example-client-id",
+      client_secret: "example-client-secret",
+      refresh_token: "example-refresh-token",
+      scopes: [
+        "https://www.googleapis.com/auth/siteverification",
+        "https://www.googleapis.com/auth/webmasters",
+      ],
+    });
+    expect(GoogleAuth.tryLoad(path)!.hasWriteScope()).toBe(true);
+    rmSync(path, { force: true });
+  });
+});
+
 describe("GoogleAuth.getAccessToken", () => {
   it("refreshes against the token endpoint and caches the result", async () => {
     const fetchMock = vi.fn(

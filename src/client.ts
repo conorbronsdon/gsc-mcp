@@ -21,6 +21,15 @@ const WEBMASTERS_BASE = "https://www.googleapis.com/webmasters/v3";
 const INSPECTION_BASE = "https://searchconsole.googleapis.com/v1";
 
 /**
+ * What a request is about, in the caller's own (decoded) terms, so 403/404
+ * messages name the property or sitemap instead of the encoded API path.
+ */
+interface RequestTarget {
+  siteUrl?: string;
+  feedpath?: string;
+}
+
+/**
  * Client for the Google Search Console API. Read methods hit the documented
  * webmasters v3 + URL Inspection v1 routes; write methods (sitemap submit/delete)
  * need the full webmasters scope. All auth is via a bearer access token minted
@@ -32,8 +41,9 @@ export class GSCClient {
   private async request<T>(
     method: string,
     url: string,
-    opts: { body?: unknown } = {},
+    opts: { body?: unknown; target?: RequestTarget } = {},
   ): Promise<T> {
+    const target = opts.target ?? {};
     const endpoint = new URL(url).pathname;
     const token = await this.auth.getAccessToken();
 
@@ -68,7 +78,10 @@ export class GSCClient {
       throw new RateLimitError(endpoint);
     }
     if (response.status === 404) {
-      throw new NotFoundError(endpoint, endpoint);
+      if (target.siteUrl !== undefined && target.feedpath !== undefined) {
+        throw new NotFoundError(endpoint, target.feedpath, target.siteUrl);
+      }
+      throw new NotFoundError(endpoint, target.siteUrl ?? endpoint);
     }
     if (response.status === 403) {
       // 403 means either a missing OAuth scope or no permission on the property.
@@ -78,7 +91,7 @@ export class GSCClient {
       if (/insufficient.*scope|ACCESS_TOKEN_SCOPE_INSUFFICIENT/i.test(text)) {
         throw new ScopeError(endpoint);
       }
-      throw new PermissionError(endpoint, endpoint);
+      throw new PermissionError(endpoint, target.siteUrl ?? endpoint);
     }
     if (!response.ok) {
       const body = await response.text().catch(() => "unknown error");
@@ -129,7 +142,7 @@ export class GSCClient {
       `${WEBMASTERS_BASE}/sites/${GSCClient.encodeSite(
         args.siteUrl,
       )}/searchAnalytics/query`,
-      { body },
+      { body, target: { siteUrl: args.siteUrl } },
     );
   }
 
@@ -138,6 +151,7 @@ export class GSCClient {
     return this.request<SitemapsListResponse>(
       "GET",
       `${WEBMASTERS_BASE}/sites/${GSCClient.encodeSite(siteUrl)}/sitemaps`,
+      { target: { siteUrl } },
     );
   }
 
@@ -148,6 +162,7 @@ export class GSCClient {
       `${WEBMASTERS_BASE}/sites/${GSCClient.encodeSite(
         siteUrl,
       )}/sitemaps/${GSCClient.encodeSite(feedpath)}`,
+      { target: { siteUrl, feedpath } },
     );
   }
 
@@ -161,6 +176,7 @@ export class GSCClient {
       `${WEBMASTERS_BASE}/sites/${GSCClient.encodeSite(
         siteUrl,
       )}/sitemaps/${GSCClient.encodeSite(feedpath)}`,
+      { target: { siteUrl, feedpath } },
     );
   }
 
@@ -174,6 +190,7 @@ export class GSCClient {
       `${WEBMASTERS_BASE}/sites/${GSCClient.encodeSite(
         siteUrl,
       )}/sitemaps/${GSCClient.encodeSite(feedpath)}`,
+      { target: { siteUrl, feedpath } },
     );
   }
 
@@ -191,7 +208,7 @@ export class GSCClient {
     return this.request<UrlInspectionResponse>(
       "POST",
       `${INSPECTION_BASE}/urlInspection/index:inspect`,
-      { body },
+      { body, target: { siteUrl: args.siteUrl } },
     );
   }
 }
